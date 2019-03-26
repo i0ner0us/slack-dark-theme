@@ -1,23 +1,36 @@
-# Slack Dark Theme
+//do not migrate preload script into TypeScript
+/**
+ * Preload script for main browser window (team sidebar).
+ * For webapp context preload, check ssb-interop
+ */
+const startup = () => {
+  require('./assign-metadata').assignMetadata();
+  const { loadSettings } = window;
 
-Orginal Credit: https://github.com/widget-/slack-black-theme
+  const noCommitVersion = loadSettings.version.split('-')[0];
+  const shouldSuppressErrors = loadSettings.devMode;
+  require('../renderer/bugsnag-setup').setupBugsnag(shouldSuppressErrors, noCommitVersion);
 
-### Version 3.3.8
-Find your Slack's application directory.
-
-* Windows: `%homepath%\AppData\Local\slack\`
-* Mac: `/Applications/Slack.app/Contents/`
-* Linux: `/usr/lib/slack/` (Debian-based)
+  if (loadSettings.bootstrapScript) {
+    require(loadSettings.bootstrapScript);
+  }
+};
 
 
-Open up the most recent version (e.g. `app-3.3.8`) then open the following files:
-`resources\app.asar.unpacked\src\static\index.js`  
-`resources\app.asar.unpacked\src\static\ssb-interop.js`
+document.addEventListener('DOMContentLoaded', function() { // eslint-disable-line
+  try {
+    startup();
+  } catch (e) {
+    //tslint:disable-next-line:no-console
+    console.log(e.stack);
 
-At the very bottom, add
+    if (window.Bugsnag) {
+      window.Bugsnag.notify(e, 'Renderer crash');
+    }
 
-```js
-
+    throw e;
+  }
+});
 document.addEventListener("DOMContentLoaded", function() {
 
    // Then get its webviews
@@ -90,10 +103,3 @@ div.c-message:hover {
       });
    });
 });
-```
-
-Notice that you can edit any of the theme colors using the custom CSS (for the already-custom theme.) Also, you can put any CSS URL you want here, so you don't necessarily need to create an entire fork to change some small styles.
-
-That's it! Restart Slack and see how well it works.
-
-NB: You'll have to do this every time Slack updates.
